@@ -1,0 +1,38 @@
+:root {
+  --toolbar-height: 46px;
+  --divider-width: 6px;
+  --border-color: #d0d7de;
+  --bg: #ffffff;
+  --toolbar-bg: #f6f8fa;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ===== 拖拽期间全局禁用文本选中，光标统一为左右拖拽 ===== */
+body.is-dragging,
+body.is-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: col-resize !important;
+}
