@@ -1,7 +1,8 @@
 {
-  "name": "markdown-editor",
+  "name": "macown",
+  "productName": "Macown",
   "version": "1.0.0",
-  "description": "Typora 风格双栏 Markdown 编辑器（Electron + Vue 3）",
+  "description": "Macown —— Typora 风格双栏 Markdown 编辑器（Electron + Vue 3）",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",

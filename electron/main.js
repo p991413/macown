@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, nativeTheme } = require('electron')
 const path = require('path')
 
 // 是否运行在开发模式（由 dev:electron 脚本注入环境变量）
@@ -10,7 +10,7 @@ function createWindow() {
     height: 820,
     minWidth: 700,
     minHeight: 480,
-    title: 'Markdown 编辑器',
+    title: 'Macown',
     backgroundColor: '#ffffff',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -29,6 +29,13 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 }
+
+// 图标颜色 / 原生外观：深色、浅色、跟随系统
+ipcMain.on('set-native-theme', (_event, source) => {
+  if (['system', 'light', 'dark'].includes(source)) {
+    nativeTheme.themeSource = source
+  }
+})
 
 app.whenReady().then(() => {
   createWindow()

@@ -1,12 +1,89 @@
+/* ============================================================
+   base.css —— 重置、结构变量、默认(GitHub 浅色)主题变量、全局工具样式
+   主题变量在 themes.css 中按 data-theme 覆盖
+   ============================================================ */
+
 :root {
+  /* 结构尺寸 */
   --toolbar-height: 46px;
   --divider-width: 6px;
-  --border-color: #d0d7de;
+  --tab-height: 36px;
+  --tab-width: 180px;
+  --editor-line-height: 1.7;
+
+  /* 字体 */
+  --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --code-font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  /* 字号（由设置项动态覆盖） */
+  --editor-font-size: 14px;
+  --preview-font-size: 16px;
+
+  /* ===== 默认主题：GitHub 浅色 ===== */
   --bg: #ffffff;
-  --toolbar-bg: #f6f8fa;
   --text: #1f2328;
   --muted: #656d76;
+  --border-color: #d0d7de;
+  --toolbar-bg: #f6f8fa;
   --accent: #0969da;
+  --hover-bg: #eaeef2;
+  --active-bg: #d0d7de;
+  --danger: #cf222e;
+  --danger-bg: #ffebe9;
+  --panel-bg: #ffffff;
+  --shadow: 0 8px 24px rgba(140, 149, 159, 0.2);
+  --input-bg: #ffffff;
+  --input-border: #d0d7de;
+
+  /* 编辑器 */
+  --editor-bg: #ffffff;
+  --editor-text: #1f2328;
+  --editor-caret: #1f2328;
+  --editor-placeholder: #8c959f;
+  --gutter-bg: #ffffff;
+  --gutter-text: #b0b8c1;
+  --gutter-current-bg: #f6f8fa;
+  --gutter-current-text: #1f2328;
+  --selection-bg: rgba(9, 105, 218, 0.2);
+
+  /* 预览 */
+  --preview-bg: #ffffff;
+
+  /* Markdown 排版 */
+  --md-text: #1f2328;
+  --md-muted: #656d76;
+  --md-link: #0969da;
+  --md-heading-border: #d8dee4;
+  --md-code-bg: #f6f8fa;
+  --md-code-text: #1f2328;
+  --md-code-inline-bg: rgba(175, 184, 193, 0.2);
+  --md-quote-border: #d0d7de;
+  --md-table-border: #d0d7de;
+  --md-table-stripe: #f6f8fa;
+  --md-hr: #d0d7de;
+
+  /* 搜索高亮 */
+  --search-match-bg: rgba(255, 213, 0, 0.45);
+  --search-match-text: #1f2328;
+  --search-match-current-bg: rgba(255, 129, 0, 0.65);
+  --search-match-current-text: #1f2328;
+  --search-line-bg: rgba(9, 105, 218, 0.08);
+
+  /* 代码高亮（hljs） */
+  --syntax-comment: #6e7781;
+  --syntax-keyword: #cf222e;
+  --syntax-string: #0a3069;
+  --syntax-number: #0550ae;
+  --syntax-title: #8250df;
+  --syntax-function: #8250df;
+  --syntax-attr: #0550ae;
+  --syntax-tag: #116329;
+  --syntax-meta: #953800;
+  --syntax-builtin: #953800;
+  --syntax-addition: #116329;
+  --syntax-deletion: #82071e;
 }
 
 * {
@@ -22,11 +99,11 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-stack);
   color: var(--text);
   background: var(--bg);
   overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ===== 拖拽期间全局禁用文本选中，光标统一为左右拖拽 ===== */
@@ -35,4 +112,65 @@ body.is-dragging * {
   user-select: none !important;
   -webkit-user-select: none !important;
   cursor: col-resize !important;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* ===== 搜索高亮（编辑器 backdrop 内使用） ===== */
+mark {
+  background: var(--search-match-bg);
+  color: var(--search-match-text);
+  border-radius: 2px;
+}
+mark.mark-current {
+  background: var(--search-match-current-bg);
+  color: var(--search-match-current-text);
+}
+.line-current {
+  background: var(--search-line-bg);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--search-line-bg);
+}
+
+/* ===== 通用按钮 ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.btn:hover {
+  background: var(--hover-bg);
+}
+.btn:active {
+  background: var(--active-bg);
+}
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.btn--primary:hover {
+  background: var(--accent);
+  filter: brightness(1.05);
 }

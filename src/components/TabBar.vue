@@ -1,0 +1,156 @@
+<script setup>
+const props = defineProps({
+  documents: { type: Array, required: true },
+  activeId: { type: String, default: null },
+  position: { type: String, default: 'top' }, // 'top' | 'left' | 'right'
+})
+const emit = defineEmits(['select', 'close', 'new'])
+
+function titleOf(doc) {
+  if (!doc || !doc.content) return '未命名'
+  const line = doc.content.split('\n').find((l) => l.trim())
+  if (!line) return '未命名'
+  return line.replace(/^#+\s*/, '').trim().slice(0, 20) || '未命名'
+}
+</script>
+
+<template>
+  <div class="tabbar" :class="`tabbar--${position}`">
+    <div class="tabbar__tabs">
+      <div
+        v-for="doc in documents"
+        :key="doc.id"
+        class="tabbar__tab"
+        :class="{ 'is-active': doc.id === activeId }"
+        :title="titleOf(doc)"
+        @click="emit('select', doc.id)"
+      >
+        <span class="tabbar__title">{{ titleOf(doc) }}</span>
+        <button
+          class="tabbar__close"
+          title="关闭"
+          @click.stop="emit('close', doc.id)"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+    <button class="tabbar__new" title="新建文档" @click="emit('new')">+</button>
+  </div>
+</template>
+
+<style scoped>
+.tabbar {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--toolbar-bg);
+  user-select: none;
+}
+.tabbar__tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.tabbar__new {
+  flex: 0 0 auto;
+  width: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabbar__new:hover {
+  color: var(--text);
+  background: var(--hover-bg);
+}
+
+.tabbar__tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  border-right: 1px solid var(--border-color);
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.tabbar__tab:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+.tabbar__tab.is-active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.tabbar__title {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabbar__close {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.tabbar__close:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* ---------- 顶部（水平） ---------- */
+.tabbar--top {
+  flex-direction: row;
+  height: var(--tab-height);
+  border-bottom: 1px solid var(--border-color);
+}
+.tabbar--top .tabbar__tab {
+  height: 100%;
+}
+
+/* ---------- 左侧 / 右侧（垂直） ---------- */
+.tabbar--left,
+.tabbar--right {
+  flex-direction: column;
+  width: var(--tab-width);
+}
+.tabbar--left {
+  border-right: 1px solid var(--border-color);
+}
+.tabbar--right {
+  border-left: 1px solid var(--border-color);
+}
+.tabbar--left .tabbar__tabs,
+.tabbar--right .tabbar__tabs {
+  flex-direction: column;
+}
+.tabbar--left .tabbar__tab,
+.tabbar--right .tabbar__tab {
+  height: var(--tab-height);
+  border-right: none;
+  border-bottom: 1px solid var(--border-color);
+}
+.tabbar--left .tabbar__tab.is-active {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+.tabbar--right .tabbar__tab.is-active {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.tabbar--left .tabbar__title,
+.tabbar--right .tabbar__title {
+  max-width: 120px;
+}
+</style>

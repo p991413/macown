@@ -56,7 +56,7 @@ defineExpose({
   height: 100%;
   overflow-y: auto;
   padding: 20px 24px;
-  background: #ffffff;
+  background: var(--preview-bg);
 }
 
 .preview-pane__inner {

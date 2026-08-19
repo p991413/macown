@@ -1,0 +1,251 @@
+/* ============================================================
+   themes.css —— 主题变量（按 data-theme 覆盖）与代码高亮配色
+   默认(GitHub 浅色)已在 base.css 中定义
+   ============================================================ */
+
+/* ================= 白色（纯净极简） ================= */
+[data-theme='white'] {
+  --bg: #ffffff;
+  --text: #111111;
+  --muted: #888888;
+  --border-color: #e6e6e6;
+  --toolbar-bg: #fafafa;
+  --accent: #111111;
+  --hover-bg: #f0f0f0;
+  --active-bg: #e2e2e2;
+  --danger: #e5484d;
+  --danger-bg: #feecec;
+  --panel-bg: #ffffff;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --input-bg: #ffffff;
+  --input-border: #e6e6e6;
+
+  --editor-bg: #ffffff;
+  --editor-text: #111111;
+  --editor-caret: #111111;
+  --editor-placeholder: #bbbbbb;
+  --gutter-bg: #ffffff;
+  --gutter-text: #cccccc;
+  --gutter-current-bg: #f5f5f5;
+  --gutter-current-text: #111111;
+  --selection-bg: rgba(17, 17, 17, 0.15);
+
+  --preview-bg: #ffffff;
+
+  --md-text: #111111;
+  --md-muted: #888888;
+  --md-link: #111111;
+  --md-heading-border: #ececec;
+  --md-code-bg: #f7f7f7;
+  --md-code-text: #111111;
+  --md-code-inline-bg: #f0f0f0;
+  --md-quote-border: #e6e6e6;
+  --md-table-border: #e6e6e6;
+  --md-table-stripe: #fafafa;
+  --md-hr: #e6e6e6;
+
+  --search-match-bg: rgba(255, 213, 0, 0.5);
+  --search-match-current-bg: rgba(255, 129, 0, 0.7);
+
+  --syntax-comment: #9a9a9a;
+  --syntax-keyword: #111111;
+  --syntax-string: #333333;
+  --syntax-number: #555555;
+  --syntax-title: #111111;
+  --syntax-function: #333333;
+  --syntax-attr: #444444;
+  --syntax-tag: #111111;
+  --syntax-meta: #666666;
+  --syntax-builtin: #333333;
+  --syntax-addition: #111111;
+  --syntax-deletion: #111111;
+}
+
+/* ================= 黑色（深色） ================= */
+[data-theme='dark'] {
+  --bg: #0d1117;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --border-color: #30363d;
+  --toolbar-bg: #161b22;
+  --accent: #58a6ff;
+  --hover-bg: #21262d;
+  --active-bg: #30363d;
+  --danger: #f85149;
+  --danger-bg: rgba(248, 81, 73, 0.15);
+  --panel-bg: #161b22;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --input-bg: #0d1117;
+  --input-border: #30363d;
+
+  --editor-bg: #0d1117;
+  --editor-text: #e6edf3;
+  --editor-caret: #e6edf3;
+  --editor-placeholder: #484f58;
+  --gutter-bg: #0d1117;
+  --gutter-text: #484f58;
+  --gutter-current-bg: #161b22;
+  --gutter-current-text: #e6edf3;
+  --selection-bg: rgba(88, 166, 255, 0.3);
+
+  --preview-bg: #0d1117;
+
+  --md-text: #e6edf3;
+  --md-muted: #8b949e;
+  --md-link: #58a6ff;
+  --md-heading-border: #30363d;
+  --md-code-bg: #161b22;
+  --md-code-text: #e6edf3;
+  --md-code-inline-bg: rgba(110, 118, 129, 0.4);
+  --md-quote-border: #30363d;
+  --md-table-border: #30363d;
+  --md-table-stripe: #161b22;
+  --md-hr: #30363d;
+
+  --search-match-bg: rgba(210, 153, 34, 0.5);
+  --search-match-text: #ffffff;
+  --search-match-current-bg: rgba(255, 166, 87, 0.7);
+  --search-match-current-text: #0d1117;
+  --search-line-bg: rgba(88, 166, 255, 0.12);
+
+  --syntax-comment: #8b949e;
+  --syntax-keyword: #ff7b72;
+  --syntax-string: #a5d6ff;
+  --syntax-number: #79c0ff;
+  --syntax-title: #d2a8ff;
+  --syntax-function: #d2a8ff;
+  --syntax-attr: #79c0ff;
+  --syntax-tag: #7ee787;
+  --syntax-meta: #ffa657;
+  --syntax-builtin: #ffa657;
+  --syntax-addition: #7ee787;
+  --syntax-deletion: #ff7b72;
+}
+
+/* ================= Cyber（霓虹赛博朋克） ================= */
+[data-theme='cyber'] {
+  --bg: #0a0e14;
+  --text: #d7fce9;
+  --muted: #5c6b7a;
+  --border-color: #1c2836;
+  --toolbar-bg: #0d1321;
+  --accent: #00ff9c;
+  --hover-bg: #131c2b;
+  --active-bg: #1c2836;
+  --danger: #ff4d6d;
+  --danger-bg: rgba(255, 77, 109, 0.15);
+  --panel-bg: #0d1321;
+  --shadow: 0 0 24px rgba(0, 255, 156, 0.15);
+  --input-bg: #0a0e14;
+  --input-border: #1c2836;
+
+  --editor-bg: #0a0e14;
+  --editor-text: #d7fce9;
+  --editor-caret: #00ff9c;
+  --editor-placeholder: #33404e;
+  --gutter-bg: #0a0e14;
+  --gutter-text: #33404e;
+  --gutter-current-bg: #0d1321;
+  --gutter-current-text: #00ff9c;
+  --selection-bg: rgba(0, 255, 156, 0.25);
+
+  --preview-bg: #0a0e14;
+
+  --md-text: #d7fce9;
+  --md-muted: #5c6b7a;
+  --md-link: #00e5ff;
+  --md-heading-border: #1c2836;
+  --md-code-bg: #0d1321;
+  --md-code-text: #d7fce9;
+  --md-code-inline-bg: rgba(0, 255, 156, 0.12);
+  --md-quote-border: #00ff9c;
+  --md-table-border: #1c2836;
+  --md-table-stripe: #0d1321;
+  --md-hr: #1c2836;
+
+  --search-match-bg: rgba(0, 255, 156, 0.3);
+  --search-match-text: #d7fce9;
+  --search-match-current-bg: rgba(255, 0, 255, 0.5);
+  --search-match-current-text: #ffffff;
+  --search-line-bg: rgba(0, 229, 255, 0.12);
+
+  --syntax-comment: #5c6b7a;
+  --syntax-keyword: #ff00ff;
+  --syntax-string: #00ff9c;
+  --syntax-number: #ffd60a;
+  --syntax-title: #00e5ff;
+  --syntax-function: #00e5ff;
+  --syntax-attr: #ffd60a;
+  --syntax-tag: #ff00ff;
+  --syntax-meta: #ff9e00;
+  --syntax-builtin: #ff9e00;
+  --syntax-addition: #00ff9c;
+  --syntax-deletion: #ff4d6d;
+}
+
+/* ============================================================
+   代码高亮（highlight.js 产出的 class → 主题变量）
+   ============================================================ */
+.hljs {
+  color: var(--syntax-attr);
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag {
+  color: var(--syntax-keyword);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: var(--syntax-string);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: var(--syntax-number);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-section {
+  color: var(--syntax-title);
+}
+.hljs-function,
+.hljs-built_in,
+.hljs-type,
+.hljs-class {
+  color: var(--syntax-function);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params {
+  color: var(--syntax-attr);
+}
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--syntax-tag);
+}
+.hljs-meta {
+  color: var(--syntax-meta);
+}
+.hljs-deletion {
+  color: var(--syntax-deletion);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: bold;
+}
