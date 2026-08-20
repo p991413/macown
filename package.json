@@ -3,6 +3,7 @@
   "productName": "Macown",
   "version": "1.0.0",
   "description": "Macown —— Typora 风格双栏 Markdown 编辑器（Electron + Vue 3）",
+  "author": "p991413 <p991413@foxmail.com>",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
@@ -10,7 +11,11 @@
     "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
     "build": "vite build",
     "start": "electron .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --mac",
+    "dist:win": "npm run build && cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --win",
+    "dist:linux": "npm run build && cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --linux"
   },
   "keywords": [
     "markdown",
@@ -19,18 +24,46 @@
     "vue3"
   ],
   "license": "MIT",
+  "build": {
+    "appId": "com.macown.app",
+    "productName": "Macown",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.0",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "electron": "^33.2.0",
-    "vite": "^5.4.11",
-    "wait-on": "^8.0.1"
-  },
-  "dependencies": {
+    "electron-builder": "^26.15.3",
     "highlight.js": "^11.10.0",
     "marked": "^12.0.2",
     "marked-highlight": "^2.1.4",
-    "vue": "^3.5.13"
-  }
+    "vite": "^5.4.11",
+    "vue": "^3.5.13",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {}
 }

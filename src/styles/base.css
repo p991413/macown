@@ -20,6 +20,8 @@
   /* 字号（由设置项动态覆盖） */
   --editor-font-size: 14px;
   --preview-font-size: 16px;
+  /* 缩放比例（只缩放字号，不改变布局宽度） */
+  --zoom: 1;
 
   /* ===== 默认主题：GitHub 浅色 ===== */
   --bg: #ffffff;
@@ -64,12 +66,12 @@
   --md-table-stripe: #f6f8fa;
   --md-hr: #d0d7de;
 
-  /* 搜索高亮 */
-  --search-match-bg: rgba(255, 213, 0, 0.45);
+  /* 搜索高亮（结果为黄色，所在行为灰色） */
+  --search-match-bg: rgba(255, 214, 10, 0.55);
   --search-match-text: #1f2328;
-  --search-match-current-bg: rgba(255, 129, 0, 0.65);
+  --search-match-current-bg: rgba(255, 158, 0, 0.7);
   --search-match-current-text: #1f2328;
-  --search-line-bg: rgba(9, 105, 218, 0.08);
+  --search-line-bg: rgba(110, 118, 129, 0.3);
 
   /* 代码高亮（hljs） */
   --syntax-comment: #6e7781;
@@ -127,7 +129,9 @@ body.is-dragging * {
   background: var(--muted);
 }
 
-/* ===== 搜索高亮（编辑器 backdrop 内使用） ===== */
+/* ===== 搜索高亮 =====
+   搜索结果统一为黄色高亮框（mark 文字可见，用于预览区）；
+   编辑器高亮覆盖层内的 mark 文字透明（正文由 textarea 呈现） */
 mark {
   background: var(--search-match-bg);
   color: var(--search-match-text);
@@ -137,10 +141,15 @@ mark.mark-current {
   background: var(--search-match-current-bg);
   color: var(--search-match-current-text);
 }
+.editor__hl mark {
+  color: transparent;
+}
+/* 当前匹配所在行：inline 背景整行高亮（随文本流滚动、精确对齐，避免绝对定位错位） */
 .line-current {
   background: var(--search-line-bg);
   border-radius: 2px;
-  box-shadow: 0 0 0 1px var(--search-line-bg);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* ===== 通用按钮 ===== */
@@ -149,13 +158,13 @@ mark.mark-current {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 28px;
+  height: calc(28px * var(--zoom));
   padding: 0 10px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--input-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   cursor: pointer;
   transition: background-color 0.15s ease;
 }

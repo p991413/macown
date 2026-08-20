@@ -109,20 +109,20 @@ function onSearchKeydown(e) {
 .searchbar__input {
   flex: 1;
   min-width: 0;
-  height: 28px;
+  height: calc(28px * var(--zoom));
   padding: 0 8px;
   border: 1px solid var(--input-border);
   border-radius: 6px;
   background: var(--input-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   outline: none;
 }
 .searchbar__input:focus {
   border-color: var(--accent);
 }
 .searchbar__count {
-  font-size: 12px;
+  font-size: calc(12px * var(--zoom));
   color: var(--muted);
   min-width: 44px;
   text-align: center;
@@ -132,14 +132,14 @@ function onSearchKeydown(e) {
   color: var(--danger);
 }
 .searchbar__btn {
-  min-width: 26px;
-  height: 26px;
+  min-width: calc(26px * var(--zoom));
+  height: calc(26px * var(--zoom));
   padding: 0 6px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   cursor: pointer;
   display: inline-flex;
   align-items: center;

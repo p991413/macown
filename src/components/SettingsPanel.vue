@@ -109,6 +109,15 @@ function zoomReset() {
           </label>
         </section>
 
+        <!-- 显示大纲 -->
+        <section class="settings__group settings__group--row">
+          <div class="settings__label">显示大纲</div>
+          <label class="switch">
+            <input v-model="state.showOutline" type="checkbox" />
+            <span class="switch__slider"></span>
+          </label>
+        </section>
+
         <!-- 页签位置 -->
         <section class="settings__group">
           <div class="settings__label">页签位置</div>
@@ -191,7 +200,7 @@ function zoomReset() {
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: 18px;
+  font-size: calc(18px * var(--zoom));
   cursor: pointer;
 }
 .settings__close:hover {
@@ -214,7 +223,7 @@ function zoomReset() {
   justify-content: space-between;
 }
 .settings__label {
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -225,7 +234,7 @@ function zoomReset() {
   font-weight: 600;
 }
 .settings__hint {
-  font-size: 12px;
+  font-size: calc(12px * var(--zoom));
   color: var(--muted);
   opacity: 0.8;
 }
@@ -245,7 +254,7 @@ function zoomReset() {
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  font-size: 12px;
+  font-size: calc(12px * var(--zoom));
   color: var(--text);
 }
 .theme-item.is-active {
@@ -265,13 +274,13 @@ function zoomReset() {
   width: 100%;
 }
 .settings__select {
-  height: 30px;
+  height: calc(30px * var(--zoom));
   padding: 0 8px;
   border: 1px solid var(--input-border);
   border-radius: 6px;
   background: var(--input-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   outline: none;
 }
 
@@ -283,11 +292,11 @@ function zoomReset() {
 }
 .seg-item {
   flex: 1;
-  height: 30px;
+  height: calc(30px * var(--zoom));
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
   cursor: pointer;
 }
 .seg-item + .seg-item {

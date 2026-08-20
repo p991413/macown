@@ -12,6 +12,7 @@ const DEFAULTS = {
   fontSize: 14, // 编辑器字号
   codeFont: 'default', // 'default' | 'menlo' | 'fira' | 'jetbrains'
   showLineNumbers: true,
+  showOutline: true,
   tabPosition: 'top', // 'top' | 'left' | 'right'
   iconColor: 'system', // 'dark' | 'light' | 'system'
   zoom: 1, // 缩放比例
@@ -49,17 +50,16 @@ function applyTheme(theme) {
 }
 
 function applyStyle() {
+  const z = state.zoom || 1
   const root = document.documentElement
-  root.style.setProperty('--editor-font-size', `${state.fontSize}px`)
-  root.style.setProperty('--preview-font-size', `${state.fontSize + 2}px`)
+  // 缩放只改变字号（不改变布局宽度）：避免列宽随缩放变窄、搜索高亮错位
+  root.style.setProperty('--zoom', String(z))
+  root.style.setProperty('--editor-font-size', `${(state.fontSize * z).toFixed(2)}px`)
+  root.style.setProperty('--preview-font-size', `${((state.fontSize + 2) * z).toFixed(2)}px`)
   root.style.setProperty(
     '--code-font-family',
     CODE_FONTS[state.codeFont] || CODE_FONTS.default
   )
-}
-
-function applyZoom() {
-  window.electronAPI?.setZoom?.(state.zoom)
 }
 
 // 图标颜色 → 原生外观（标题栏/系统主题）
@@ -71,7 +71,6 @@ function init() {
   applyTheme(state.theme)
   applyStyle()
   applyNativeTheme()
-  requestAnimationFrame(applyZoom)
 }
 
 watch(
@@ -79,16 +78,8 @@ watch(
   (v) => applyTheme(v)
 )
 watch(
-  () => state.fontSize,
+  () => [state.fontSize, state.codeFont, state.zoom],
   () => applyStyle()
-)
-watch(
-  () => state.codeFont,
-  () => applyStyle()
-)
-watch(
-  () => state.zoom,
-  () => applyZoom()
 )
 watch(
   () => state.iconColor,

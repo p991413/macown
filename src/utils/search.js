@@ -31,45 +31,61 @@ export function findMatches(content, query, caseSensitive = false) {
 
 /**
  * 生成用于编辑器 backdrop 的高亮 HTML：
- * - 所有匹配包裹 <mark>
- * - 当前匹配用 <mark class="mark-current">
- * - 当前匹配所在行包裹 <span class="line-current">
- * 注意：切片在「原始内容」上进行，逐段转义，保证与 findMatches 的下标一致。
+ * - 每个逻辑行包裹 <span class="ll">（供行号测量/定位）
+ * - 所有匹配包裹 <mark>；当前匹配用 <mark class="mark-current">
+ * - 当前匹配所在行整行包裹 <span class="line-current">（inline 背景整行高亮，随文本流精确对齐）
+ * 匹配仅支持单行（跨行匹配不处理），保证 HTML 结构合法。
  */
 export function buildHighlightedHtml(content, matches, currentIndex) {
-  if (!matches || matches.length === 0) return escapeHtml(content)
+  const lines = content.split('\n')
+
+  // 无匹配：仅按逻辑行包裹 span，便于行号测量
+  if (!matches || matches.length === 0) {
+    return lines.map((l) => `<span class="ll">${escapeHtml(l)}</span>`).join('\n')
+  }
 
   const ci = ((currentIndex % matches.length) + matches.length) % matches.length
   const cur = matches[ci]
-  const lineStart = content.lastIndexOf('\n', cur.start) + 1
-  let lineEnd = content.indexOf('\n', cur.start)
-  if (lineEnd === -1) lineEnd = content.length
-
-  // 事件流：t 越小越先输出（行开启 < 匹配开启 < 匹配关闭 < 行关闭）
-  const events = [
-    { pos: lineStart, t: 0, tag: '<span class="line-current">' },
-    { pos: lineEnd, t: 3, tag: '</span>' },
-  ]
-  matches.forEach((m, idx) => {
-    events.push({
-      pos: m.start,
-      t: 1,
-      tag: idx === ci ? '<mark class="mark-current">' : '<mark>',
-    })
-    events.push({ pos: m.end, t: 2, tag: '</mark>' })
-  })
-  events.sort((a, b) => a.pos - b.pos || a.t - b.t)
 
   let out = ''
-  let pos = 0
-  for (const ev of events) {
-    if (ev.pos > pos) {
-      out += escapeHtml(content.slice(pos, ev.pos))
-      pos = ev.pos
+  let lineStart = 0
+  for (let i = 0; i < lines.length; i++) {
+    const lineEnd = lineStart + lines[i].length // 该行结束位置（不含换行）
+    const events = []
+
+    // 当前匹配所在行：整行包裹 line-current（供 inline 整行高亮）
+    if (cur.start >= lineStart && cur.start < lineEnd) {
+      events.push({ pos: lineStart, t: 0, tag: '<span class="line-current">' })
+      events.push({ pos: lineEnd, t: 3, tag: '</span>' })
     }
-    out += ev.tag
+    // 本行内完全落下的匹配
+    matches.forEach((m, idx) => {
+      if (m.start >= lineStart && m.start < lineEnd && m.end <= lineEnd) {
+        events.push({
+          pos: m.start,
+          t: 1,
+          tag: idx === ci ? '<mark class="mark-current">' : '<mark>',
+        })
+        events.push({ pos: m.end, t: 2, tag: '</mark>' })
+      }
+    })
+    events.sort((a, b) => a.pos - b.pos || a.t - b.t)
+
+    let lineHtml = ''
+    let pos = lineStart
+    for (const ev of events) {
+      if (ev.pos > pos) {
+        lineHtml += escapeHtml(content.slice(pos, Math.min(ev.pos, lineEnd)))
+        pos = ev.pos
+      }
+      lineHtml += ev.tag
+    }
+    if (pos < lineEnd) lineHtml += escapeHtml(content.slice(pos, lineEnd))
+
+    out += `<span class="ll">${lineHtml}</span>`
+    if (i < lines.length - 1) out += '\n'
+    lineStart = lineEnd + 1 // 跳过换行符
   }
-  out += escapeHtml(content.slice(pos))
   return out
 }
 

@@ -133,5 +133,6 @@ export function useDocuments() {
     closeDocument,
     setActive,
     deriveTitle,
+    save,
   }
 }

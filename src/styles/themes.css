@@ -44,8 +44,9 @@
   --md-table-stripe: #fafafa;
   --md-hr: #e6e6e6;
 
-  --search-match-bg: rgba(255, 213, 0, 0.5);
-  --search-match-current-bg: rgba(255, 129, 0, 0.7);
+  --search-match-bg: rgba(255, 214, 10, 0.6);
+  --search-match-current-bg: rgba(255, 158, 0, 0.75);
+  --search-line-bg: rgba(0, 0, 0, 0.15);
 
   --syntax-comment: #9a9a9a;
   --syntax-keyword: #111111;
@@ -102,11 +103,11 @@
   --md-table-stripe: #161b22;
   --md-hr: #30363d;
 
-  --search-match-bg: rgba(210, 153, 34, 0.5);
-  --search-match-text: #ffffff;
-  --search-match-current-bg: rgba(255, 166, 87, 0.7);
-  --search-match-current-text: #0d1117;
-  --search-line-bg: rgba(88, 166, 255, 0.12);
+  --search-match-bg: rgba(255, 214, 10, 0.42);
+  --search-match-text: #1f2328;
+  --search-match-current-bg: rgba(255, 158, 0, 0.55);
+  --search-match-current-text: #1f2328;
+  --search-line-bg: rgba(139, 148, 158, 0.3);
 
   --syntax-comment: #8b949e;
   --syntax-keyword: #ff7b72;
@@ -163,11 +164,11 @@
   --md-table-stripe: #0d1321;
   --md-hr: #1c2836;
 
-  --search-match-bg: rgba(0, 255, 156, 0.3);
-  --search-match-text: #d7fce9;
-  --search-match-current-bg: rgba(255, 0, 255, 0.5);
-  --search-match-current-text: #ffffff;
-  --search-line-bg: rgba(0, 229, 255, 0.12);
+  --search-match-bg: rgba(255, 214, 10, 0.4);
+  --search-match-text: #1f2328;
+  --search-match-current-bg: rgba(255, 158, 0, 0.55);
+  --search-match-current-text: #1f2328;
+  --search-line-bg: rgba(92, 107, 122, 0.35);
 
   --syntax-comment: #5c6b7a;
   --syntax-keyword: #ff00ff;

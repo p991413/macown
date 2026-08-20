@@ -60,7 +60,7 @@ function titleOf(doc) {
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: 18px;
+  font-size: calc(18px * var(--zoom));
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -80,7 +80,7 @@ function titleOf(doc) {
   border-right: 1px solid var(--border-color);
   cursor: pointer;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: calc(13px * var(--zoom));
 }
 .tabbar__tab:hover {
   background: var(--hover-bg);
@@ -101,7 +101,7 @@ function titleOf(doc) {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-size: 14px;
+  font-size: calc(14px * var(--zoom));
   line-height: 1;
   padding: 2px 4px;
   border-radius: 4px;
@@ -114,7 +114,7 @@ function titleOf(doc) {
 /* ---------- 顶部（水平） ---------- */
 .tabbar--top {
   flex-direction: row;
-  height: var(--tab-height);
+  height: calc(var(--tab-height) * var(--zoom));
   border-bottom: 1px solid var(--border-color);
 }
 .tabbar--top .tabbar__tab {
@@ -139,7 +139,7 @@ function titleOf(doc) {
 }
 .tabbar--left .tabbar__tab,
 .tabbar--right .tabbar__tab {
-  height: var(--tab-height);
+  height: calc(var(--tab-height) * var(--zoom));
   border-right: none;
   border-bottom: 1px solid var(--border-color);
 }
