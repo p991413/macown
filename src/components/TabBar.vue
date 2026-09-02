@@ -1,4 +1,6 @@
 <script setup>
+import { useSettings } from '../composables/useSettings'
+
 const props = defineProps({
   documents: { type: Array, required: true },
   activeId: { type: String, default: null },
@@ -6,7 +8,11 @@ const props = defineProps({
 })
 const emit = defineEmits(['select', 'close', 'new'])
 
+const { state: settingsState } = useSettings()
+
 function titleOf(doc) {
+  // 优先显示文件名（已关联磁盘文件）
+  if (doc?.name) return doc.name
   if (!doc || !doc.content) return '未命名'
   const line = doc.content.split('\n').find((l) => l.trim())
   if (!line) return '未命名'
@@ -15,17 +21,18 @@ function titleOf(doc) {
 </script>
 
 <template>
-  <div class="tabbar" :class="`tabbar--${position}`">
+  <div class="tabbar" :class="[`tabbar--${position}`, { 'tabbar--rounded': settingsState.tabStyle === 'rounded' }]">
     <div class="tabbar__tabs">
       <div
         v-for="doc in documents"
         :key="doc.id"
         class="tabbar__tab"
         :class="{ 'is-active': doc.id === activeId }"
-        :title="titleOf(doc)"
+        :title="doc.path || titleOf(doc)"
         @click="emit('select', doc.id)"
       >
         <span class="tabbar__title">{{ titleOf(doc) }}</span>
+        <span v-if="doc.dirty" class="tabbar__dot" title="待保存"></span>
         <button
           class="tabbar__close"
           title="关闭"
@@ -80,7 +87,9 @@ function titleOf(doc) {
   border-right: 1px solid var(--border-color);
   cursor: pointer;
   white-space: nowrap;
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
+  flex: 0 0 auto;
+  min-width: 0;
 }
 .tabbar__tab:hover {
   background: var(--hover-bg);
@@ -88,13 +97,23 @@ function titleOf(doc) {
 }
 .tabbar__tab.is-active {
   background: var(--bg);
-  color: var(--text);
+  color: var(--accent);
+  font-weight: 600;
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 .tabbar__title {
-  max-width: 160px;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tabbar__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 .tabbar__close {
   border: none;
@@ -119,6 +138,7 @@ function titleOf(doc) {
 }
 .tabbar--top .tabbar__tab {
   height: 100%;
+  width: var(--tab-item-width, 160px);
 }
 
 /* ---------- 左侧 / 右侧（垂直） ---------- */
@@ -152,5 +172,22 @@ function titleOf(doc) {
 .tabbar--left .tabbar__title,
 .tabbar--right .tabbar__title {
   max-width: 120px;
+}
+
+/* ---------- 圆角样式（弧度可调） ---------- */
+.tabbar--rounded .tabbar__tab {
+  border-radius: var(--tab-radius, 6px);
+}
+.tabbar--rounded.tabbar--top .tabbar__tab {
+  border-radius: var(--tab-radius, 6px) var(--tab-radius, 6px) 0 0;
+}
+.tabbar--rounded.tabbar--top .tabbar__tab.is-active {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.tabbar--rounded.tabbar--left .tabbar__tab {
+  border-radius: var(--tab-radius, 6px) 0 0 var(--tab-radius, 6px);
+}
+.tabbar--rounded.tabbar--right .tabbar__tab {
+  border-radius: 0 var(--tab-radius, 6px) var(--tab-radius, 6px) 0;
 }
 </style>

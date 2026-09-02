@@ -42,6 +42,13 @@ function zoomOut() {
 function zoomReset() {
   state.zoom = 1
 }
+
+async function selectSavePath() {
+  const api = window.electronAPI
+  if (!api?.selectDirectory) return
+  const dir = await api.selectDirectory()
+  if (dir) state.savePath = dir
+}
 </script>
 
 <template>
@@ -83,7 +90,7 @@ function zoomReset() {
           <input
             v-model.number="state.fontSize"
             type="range"
-            min="11"
+            min="8"
             max="24"
             step="1"
             class="settings__range"
@@ -118,6 +125,25 @@ function zoomReset() {
           </label>
         </section>
 
+        <!-- 文档保存路径 -->
+        <section class="settings__group">
+          <div class="settings__label">文档保存路径</div>
+          <div class="settings__path">
+            <span class="settings__path-value" :title="state.savePath">
+              {{ state.savePath || '未配置（保存时手动选择）' }}
+            </span>
+            <button class="btn" @click="selectSavePath">选择目录</button>
+            <button
+              v-if="state.savePath"
+              class="btn"
+              title="清除配置"
+              @click="state.savePath = ''"
+            >
+              清除
+            </button>
+          </div>
+        </section>
+
         <!-- 页签位置 -->
         <section class="settings__group">
           <div class="settings__label">页签位置</div>
@@ -130,6 +156,43 @@ function zoomReset() {
               @click="state.tabPosition = p.id"
             >
               {{ p.name }}
+            </button>
+          </div>
+        </section>
+
+        <!-- 页签宽度 -->
+        <section class="settings__group">
+          <div class="settings__label">
+            页签宽度
+            <span class="settings__value">{{ state.tabWidth }}px</span>
+          </div>
+          <input
+            v-model.number="state.tabWidth"
+            type="range"
+            min="80"
+            max="300"
+            step="10"
+            class="settings__range"
+          />
+        </section>
+
+        <!-- 页签样式 -->
+        <section class="settings__group">
+          <div class="settings__label">页签样式</div>
+          <div class="settings__seg">
+            <button
+              class="seg-item"
+              :class="{ 'is-active': state.tabStyle === 'square' }"
+              @click="state.tabStyle = 'square'"
+            >
+              直角
+            </button>
+            <button
+              class="seg-item"
+              :class="{ 'is-active': state.tabStyle === 'rounded' }"
+              @click="state.tabStyle = 'rounded'"
+            >
+              圆角
             </button>
           </div>
         </section>
@@ -223,7 +286,7 @@ function zoomReset() {
   justify-content: space-between;
 }
 .settings__label {
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -234,7 +297,7 @@ function zoomReset() {
   font-weight: 600;
 }
 .settings__hint {
-  font-size: calc(12px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--muted);
   opacity: 0.8;
 }
@@ -254,7 +317,7 @@ function zoomReset() {
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  font-size: calc(12px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--text);
 }
 .theme-item.is-active {
@@ -280,7 +343,7 @@ function zoomReset() {
   border-radius: 6px;
   background: var(--input-bg);
   color: var(--text);
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   outline: none;
 }
 
@@ -296,7 +359,7 @@ function zoomReset() {
   border: none;
   background: transparent;
   color: var(--muted);
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   cursor: pointer;
 }
 .seg-item + .seg-item {
@@ -317,6 +380,21 @@ function zoomReset() {
   text-align: center;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.settings__path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings__path-value {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(var(--ui-font-size) * var(--zoom));
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 开关 */

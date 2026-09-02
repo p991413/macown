@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { buildHighlightedHtml, lineNumberOf } from '../utils/search'
 
 /**
@@ -17,12 +17,91 @@ const props = defineProps({
   currentMatchIndex: { type: Number, default: 0 },
   /** 是否显示行号 */
   showLineNumbers: { type: Boolean, default: true },
+  /** 当前文档 id（切换文档时重置撤销栈，避免跨文档撤销） */
+  docId: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue'])
 
 const textareaRef = ref(null)
 const backdropRef = ref(null)
 const gutterRef = ref(null)
+
+// ---------- 撤销 / 重做历史栈（自实现，不依赖浏览器原生 undo 栈） ----------
+// 受控 textarea（:value + @input）每次输入 Vue 都会重设 el.value，
+// 原生撤销栈会被破坏；故自维护「值 + 光标」快照栈，菜单/快捷键都走这里。
+// 快照结构：{ value, start, end }（start/end 为编辑器在该状态下的光标/选区）
+const MAX_HISTORY = 100
+const undoStack = ref([])
+const redoStack = ref([])
+let coalesceTimer = null
+let pendingSnapshot = null // 待合并的旧值
+let pendingCursor = null // 待合并的编辑前光标 { start, end }
+let pendingEditCursor = null // beforeinput 捕获到的本次编辑前光标
+
+function flushPending() {
+  if (pendingSnapshot != null) {
+    undoStack.value.push({
+      value: pendingSnapshot,
+      start: pendingCursor?.start ?? 0,
+      end: pendingCursor?.end ?? 0,
+    })
+    if (undoStack.value.length > MAX_HISTORY) undoStack.value.shift()
+    pendingSnapshot = null
+    pendingCursor = null
+  }
+  clearTimeout(coalesceTimer)
+}
+
+function pushHistory(oldValue, cursor) {
+  // 快速连续输入合并为一步：只保留输入序列最早的「值 + 光标」
+  if (pendingSnapshot == null) {
+    pendingSnapshot = oldValue
+    pendingCursor = cursor ? { start: cursor.start, end: cursor.end } : null
+  }
+  clearTimeout(coalesceTimer)
+  coalesceTimer = setTimeout(flushPending, 500)
+}
+
+function currentSnapshot() {
+  const ta = textareaRef.value
+  return {
+    value: props.modelValue,
+    start: ta?.selectionStart ?? 0,
+    end: ta?.selectionEnd ?? 0,
+  }
+}
+
+function setValue(v, cursor) {
+  emit('update:modelValue', v)
+  const ta = textareaRef.value
+  nextTick(() => {
+    if (ta && ta.value !== v) ta.value = v
+    if (ta) {
+      const start = cursor ? cursor.start : Math.min(ta.selectionStart ?? v.length, v.length)
+      const end = cursor ? cursor.end : start
+      ta.setSelectionRange(start, end)
+    }
+  })
+}
+
+function undo() {
+  flushPending()
+  if (!undoStack.value.length) return
+  const current = currentSnapshot()
+  const prev = undoStack.value.pop()
+  redoStack.value.push(current)
+  if (redoStack.value.length > MAX_HISTORY) redoStack.value.shift()
+  setValue(prev.value, { start: prev.start, end: prev.end })
+}
+
+function redo() {
+  if (!redoStack.value.length) return
+  const current = currentSnapshot()
+  const next = redoStack.value.pop()
+  undoStack.value.push(current)
+  if (undoStack.value.length > MAX_HISTORY) undoStack.value.shift()
+  setValue(next.value, { start: next.start, end: next.end })
+}
 
 const searching = computed(() => props.matches.length > 0)
 
@@ -112,6 +191,17 @@ onBeforeUnmount(() => {
 
 // 内容变化时重新测量（防抖 60ms）
 watch(() => props.modelValue, scheduleMeasure)
+
+// 切换文档时重置撤销/重做栈，避免跨文档撤销串味
+watch(
+  () => props.docId,
+  () => {
+    flushPending()
+    undoStack.value = []
+    redoStack.value = []
+    pendingEditCursor = null
+  }
+)
 // 开关行号时重新测量
 watch(
   () => props.showLineNumbers,
@@ -119,8 +209,25 @@ watch(
     if (v) measureLines()
   }
 )
+// beforeinput 在编辑真正发生前触发，此刻光标还是「编辑前」的位置，用它记录快照最精确
+function onBeforeInput(e) {
+  const ta = textareaRef.value
+  if (ta) {
+    pendingEditCursor = { start: ta.selectionStart, end: ta.selectionEnd }
+  }
+}
+
 function onInput(e) {
-  emit('update:modelValue', e.target.value)
+  const next = e.target.value
+  const prev = props.modelValue
+  if (next !== prev) {
+    // 记录旧值 + 编辑前光标（快速连续输入自动合并为一步）
+    pushHistory(prev, pendingEditCursor)
+    pendingEditCursor = null
+    // 清空重做栈：新输入后无法重做
+    redoStack.value = []
+    emit('update:modelValue', next)
+  }
 }
 
 // 滚动同步：textarea 滚动时，同步 backdrop 与 gutter 的 scrollTop
@@ -143,6 +250,11 @@ function insertAtCursor(before, after = '', placeholder = '') {
   const inserted = before + placeholder + after
   const newValue = props.modelValue.slice(0, start) + inserted + props.modelValue.slice(end)
 
+  // 程序化插入也进撤销历史，工具栏操作可撤销（记录操作前光标）
+  flushPending()
+  undoStack.value.push({ value: props.modelValue, start, end })
+  if (undoStack.value.length > MAX_HISTORY) undoStack.value.shift()
+  redoStack.value = []
   emit('update:modelValue', newValue)
 
   requestAnimationFrame(() => {
@@ -194,6 +306,11 @@ function duplicateLine() {
   const insertPos = hasTrailing ? le + 1 : le
   const inserted = hasTrailing ? block + '\n' : le === 0 ? block : '\n' + block
   const newValue = value.slice(0, insertPos) + inserted + value.slice(insertPos)
+
+  flushPending()
+  undoStack.value.push({ value: props.modelValue, start: selStart, end: selEnd })
+  if (undoStack.value.length > MAX_HISTORY) undoStack.value.shift()
+  redoStack.value = []
   emit('update:modelValue', newValue)
   requestAnimationFrame(() => {
     ta.focus()
@@ -258,6 +375,10 @@ defineExpose({
   scrollToLine,
   getScrollMapper,
   getScrollEl: () => textareaRef.value,
+  undo,
+  redo,
+  undoStack,
+  redoStack,
 })
 </script>
 
@@ -283,6 +404,7 @@ defineExpose({
         ref="textareaRef"
         class="editor__textarea"
         :value="modelValue"
+        @beforeinput="onBeforeInput"
         @input="onInput"
         @scroll="onScroll"
         spellcheck="false"

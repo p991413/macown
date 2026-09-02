@@ -1,4 +1,4 @@
-import { onMounted, onBeforeUnmount } from 'vue'
+import { watch, onBeforeUnmount } from 'vue'
 
 /**
  * 双栏滚动同步 composable —— 「行号中介」算法
@@ -10,6 +10,9 @@ import { onMounted, onBeforeUnmount } from 'vue'
  *   2. 以行号作为共同坐标，再换算回另一侧的 scrollTop。
  *
  * 这样编辑区的第 N 行，恒对应预览区渲染出的同一处内容。
+ *
+ * 元素通过 getLeft()/getRight() 动态获取；当 DOM 重建（如切换显示模式、
+ * 编辑器卸载后重挂载）时，watch 会重新绑定 scroll 监听。
  *
  * @param {() => HTMLElement | null} getLeft          左侧滚动元素
  * @param {() => HTMLElement | null} getRight         右侧滚动元素
@@ -47,15 +50,30 @@ export function useScrollSync(getLeft, getRight, getLeftMapper, getRightMapper, 
     sync(rightEl, leftEl, getRightMapper?.(), getLeftMapper?.())
   }
 
-  onMounted(() => {
-    leftEl = getLeft()
-    rightEl = getRight()
+  function bind() {
+    const l = getLeft()
+    const r = getRight()
+    if (l === leftEl && r === rightEl) return
+    unbind()
+    leftEl = l
+    rightEl = r
     if (leftEl) leftEl.addEventListener('scroll', onLeftScroll, { passive: true })
     if (rightEl) rightEl.addEventListener('scroll', onRightScroll, { passive: true })
-  })
+  }
 
-  onBeforeUnmount(() => {
+  function unbind() {
     if (leftEl) leftEl.removeEventListener('scroll', onLeftScroll)
     if (rightEl) rightEl.removeEventListener('scroll', onRightScroll)
-  })
+    leftEl = null
+    rightEl = null
+  }
+
+  // 首次挂载与元素变化时（DOM 重建/模式切换）重新绑定
+  watch(
+    () => [getLeft(), getRight()],
+    () => bind(),
+    { flush: 'post', immediate: true }
+  )
+
+  onBeforeUnmount(unbind)
 }

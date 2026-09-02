@@ -13,9 +13,13 @@ const DEFAULTS = {
   codeFont: 'default', // 'default' | 'menlo' | 'fira' | 'jetbrains'
   showLineNumbers: true,
   showOutline: true,
+  savePath: '', // 文档保存目录（空 = 未配置，保存时提示选择路径）
+  tabWidth: 160, // 单个页签宽度（px）
   tabPosition: 'top', // 'top' | 'left' | 'right'
+  tabStyle: 'square', // 'square'（直角）| 'rounded'（圆角）
   iconColor: 'system', // 'dark' | 'light' | 'system'
   zoom: 1, // 缩放比例
+  viewMode: 'source', // 'source'（源码：左编辑右预览）| 'doc'（文档：仅预览）
 }
 
 // 代码字体选项
@@ -60,6 +64,8 @@ function applyStyle() {
     '--code-font-family',
     CODE_FONTS[state.codeFont] || CODE_FONTS.default
   )
+  root.style.setProperty('--tab-item-width', `${state.tabWidth}px`)
+  root.style.setProperty('--tab-radius', '6px')
 }
 
 // 图标颜色 → 原生外观（标题栏/系统主题）
@@ -78,7 +84,7 @@ watch(
   (v) => applyTheme(v)
 )
 watch(
-  () => [state.fontSize, state.codeFont, state.zoom],
+  () => [state.fontSize, state.codeFont, state.zoom, state.tabWidth],
   () => applyStyle()
 )
 watch(

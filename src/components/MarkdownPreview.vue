@@ -36,6 +36,13 @@ marked.setOptions({
   breaks: true, // 单个换行也渲染为 <br>
 })
 
+// 预览区禁用超链接：链接渲染为纯文本，避免点击触发外部导航导致卡死
+marked.use({
+  renderer: {
+    link: (_href, _title, text) => text,
+  },
+})
+
 // 在渲染后的 HTML 文本节点中高亮搜索词（不破坏标签结构）
 function highlightInHtml(htmlString, query, currentIndex) {
   const needle = query.toLowerCase()

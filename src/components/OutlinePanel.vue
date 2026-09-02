@@ -40,13 +40,11 @@ function jumpTo(h, idx) {
 
 <style scoped>
 .outline {
-  flex: 0 0 200px;
-  min-width: 0;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--gutter-bg);
-  border-right: 1px solid var(--border-color);
 }
 .outline__header {
   display: flex;
@@ -57,7 +55,7 @@ function jumpTo(h, idx) {
   border-bottom: 1px solid var(--border-color);
 }
 .outline__title {
-  font-size: calc(12px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0.04em;
@@ -83,7 +81,7 @@ function jumpTo(h, idx) {
 }
 .outline__empty {
   margin: 12px 14px;
-  font-size: calc(12px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--muted);
   opacity: 0.7;
 }
@@ -98,7 +96,7 @@ function jumpTo(h, idx) {
   border: none;
   background: transparent;
   color: var(--text);
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   line-height: 1.9;
   padding-top: 2px;
   padding-bottom: 2px;

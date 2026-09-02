@@ -1,11 +1,14 @@
 import { reactive, computed, watch } from 'vue'
+import { useSettings } from './useSettings'
 
 /**
- * 文档 / 多页签 store（单例），自动保存到 localStorage，防止内容意外丢失。
- * 每个文档 = { id, content }；标题从内容首行自动推导。
+ * 文档 / 多页签 store（单例），内容自动缓存到 localStorage 防丢失，
+ * 同时支持写入磁盘文件（路径由「保存路径配置」或用户手动选择决定）。
+ * 每个文档 = { id, content, path, name }；path/name 为 null 表示尚未关联磁盘文件。
  */
 
 const STORAGE_KEY = 'macown:documents'
+const { state: settingsState } = useSettings()
 
 const WELCOME = `# 欢迎使用 Macown
 
@@ -37,7 +40,22 @@ function newId() {
 }
 
 function makeDoc(content = '') {
-  return { id: newId(), content }
+  return { id: newId(), content, path: null, name: null, dirty: false }
+}
+
+// ---------- 路径工具（渲染进程无 node path，用字符串处理） ----------
+function joinPath(dir, name) {
+  return `${String(dir).replace(/[\\/]+$/, '')}/${name}`
+}
+function basename(p) {
+  return String(p).split(/[\\/]/).pop() || p
+}
+function generateFileName() {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `未命名-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(
+    d.getHours()
+  )}${pad(d.getMinutes())}${pad(d.getSeconds())}.md`
 }
 
 function load() {
@@ -46,7 +64,13 @@ function load() {
     if (Array.isArray(raw) && raw.length > 0) {
       return raw
         .filter((d) => d && typeof d.content === 'string')
-        .map((d) => ({ id: d.id || newId(), content: d.content }))
+        .map((d) => ({
+          id: d.id || newId(),
+          content: d.content,
+          path: d.path || null,
+          name: d.name || null,
+          dirty: false,
+        }))
     }
   } catch (e) {
     /* ignore */
@@ -80,19 +104,75 @@ function scheduleSave() {
   saveTimer = setTimeout(save, 400)
 }
 
-// 内容变化时自动保存
+// 内容变化时自动保存，并标记对应文档为「待保存」（dirty）
 watch(
   () => state.documents.map((d) => d.content),
-  () => scheduleSave(),
+  (cur, prev) => {
+    if (prev) {
+      state.documents.forEach((doc, i) => {
+        if (cur[i] !== prev[i]) doc.dirty = true
+      })
+    }
+    scheduleSave()
+  },
   { deep: true }
 )
 
-function newDocument() {
+async function newDocument() {
   const doc = makeDoc('')
   state.documents.push(doc)
   state.activeId = doc.id
   scheduleSave()
+
+  // 配置了保存路径：自动写入磁盘（默认保存到该路径）
+  const sp = settingsState.savePath
+  const api = window.electronAPI
+  if (sp && api?.writeFile) {
+    const name = generateFileName()
+    const fullPath = joinPath(sp, name)
+    try {
+      await api.writeFile(fullPath, '')
+      doc.path = fullPath
+      doc.name = name
+      scheduleSave()
+    } catch (e) {
+      /* 写入失败仍保留内存文档 */
+    }
+  }
   return doc
+}
+
+/**
+ * 保存当前文档到磁盘。
+ * @returns {'saved' | 'canceled' | 'error' | 'no-api'}
+ */
+async function saveActive(docOverride) {
+  const doc = docOverride || activeDoc.value
+  if (!doc) return 'error'
+  const api = window.electronAPI
+  if (!api?.writeFile || !api?.saveFileDialog) return 'no-api'
+
+  let target = doc.path
+  if (!target) {
+    // 未关联文件：弹保存对话框，优先落在配置的保存路径
+    const fileName = doc.name || generateFileName()
+    const defaultPath = settingsState.savePath
+      ? joinPath(settingsState.savePath, fileName)
+      : undefined
+    target = await api.saveFileDialog({ defaultPath })
+    if (!target) return 'canceled'
+  }
+
+  try {
+    await api.writeFile(target, doc.content)
+    doc.path = target
+    doc.name = basename(target)
+    doc.dirty = false
+    scheduleSave()
+    return 'saved'
+  } catch (e) {
+    return 'error'
+  }
 }
 
 function closeDocument(id) {
@@ -106,6 +186,26 @@ function closeDocument(id) {
     state.activeId = state.documents[Math.min(idx, state.documents.length - 1)].id
   }
   scheduleSave()
+}
+
+/**
+ * 打开磁盘文件：已存在同路径文档则激活，否则新建文档并关联路径。
+ * @param {string} path 文件完整路径
+ * @param {string} content 文件内容
+ */
+function openFile(path, content) {
+  const existing = state.documents.find((d) => d.path === path)
+  if (existing) {
+    state.activeId = existing.id
+    return existing
+  }
+  const doc = makeDoc(content)
+  doc.path = path
+  doc.name = basename(path)
+  state.documents.push(doc)
+  state.activeId = doc.id
+  scheduleSave()
+  return doc
 }
 
 function setActive(id) {
@@ -132,7 +232,9 @@ export function useDocuments() {
     newDocument,
     closeDocument,
     setActive,
+    openFile,
     deriveTitle,
     save,
+    saveActive,
   }
 }

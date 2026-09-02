@@ -9,6 +9,8 @@
   --divider-width: 6px;
   --tab-height: 36px;
   --tab-width: 180px;
+  --tab-item-width: 160px;
+  --tab-radius: 6px; /* 页签圆角弧度（设置可调，仅圆角模式生效） */
   --editor-line-height: 1.7;
 
   /* 字体 */
@@ -16,6 +18,8 @@
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --code-font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
     'Liberation Mono', monospace;
+  /* 统一 UI 字体大小：标签页 / 大纲 / 工具栏 / 设置 保持一致 */
+  --ui-font-size: 13px;
 
   /* 字号（由设置项动态覆盖） */
   --editor-font-size: 14px;
@@ -121,11 +125,16 @@ body.is-dragging * {
   width: 10px;
   height: 10px;
 }
+/* 滚动条默认隐藏，鼠标悬停在可滚动区域时显示 */
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: transparent;
   border-radius: 5px;
+  transition: background-color 0.2s ease;
 }
-::-webkit-scrollbar-thumb:hover {
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+*:hover::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
 }
 

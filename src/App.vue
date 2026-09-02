@@ -25,7 +25,15 @@ import { extractHeadings } from './utils/outline'
 // ---------- 全局 store ----------
 const settings = useSettings()
 const settingsState = settings.state
-const { state: docsState, activeDoc, newDocument, closeDocument, setActive, save } = useDocuments()
+const {
+  state: docsState,
+  activeDoc,
+  newDocument,
+  closeDocument,
+  setActive,
+  saveActive,
+  openFile,
+} = useDocuments()
 
 settings.init()
 
@@ -34,7 +42,9 @@ const split = ref(50)
 const syncEnabled = ref(true)
 const settingsOpen = ref(false)
 const shortcutsOpen = ref(false)
-const saveToast = ref(false)
+const saveToast = ref('')
+const sidebarWidth = ref(220) // 左侧栏（大纲）宽度（px）
+const sidebarRef = ref(null)
 let saveToastTimer = null
 
 const editorPane = ref(null)
@@ -186,11 +196,19 @@ function insertTable() {
 }
 
 // ---------- 保存 / 页签切换 ----------
-function saveNow() {
-  save()
-  saveToast.value = true
+async function saveNow() {
+  const result = await saveActive()
+  const msg =
+    result === 'saved'
+      ? '已保存'
+      : result === 'canceled'
+        ? '已取消'
+        : result === 'error'
+          ? '保存失败'
+          : '已保存到本地'
+  saveToast.value = msg
   clearTimeout(saveToastTimer)
-  saveToastTimer = setTimeout(() => (saveToast.value = false), 1500)
+  saveToastTimer = setTimeout(() => (saveToast.value = ''), 1500)
 }
 function nextTab() {
   const docs = docsState.documents
@@ -205,7 +223,24 @@ function prevTab() {
   docsState.activeId = docs[(idx - 1 + docs.length) % docs.length].id
 }
 function closeActiveTab() {
-  if (docsState.documents.length > 1) closeDocument(docsState.activeId)
+  if (docsState.documents.length > 1) closeTab(docsState.activeId)
+}
+
+/**
+ * 关闭页签：若文档有未保存修改且内容非空，弹确认「是否保存」。
+ * 回车/确定 → 先保存再关闭；其他操作（取消/其他按键）→ 不保存直接关闭。
+ */
+async function closeTab(id) {
+  const doc = docsState.documents.find((d) => d.id === id)
+  if (!doc) return
+  const hasUnsaved = doc.dirty && doc.content.trim()
+  if (hasUnsaved) {
+    const ok = window.confirm(`“${doc.name || '未命名'}”有未保存的修改，是否保存？`)
+    if (ok) {
+      await saveActive(doc)
+    }
+  }
+  closeDocument(id)
 }
 
 // ---------- 缩放 ----------
@@ -249,6 +284,9 @@ function onKeydown(e) {
   } else if (mod && e.key === '0') {
     e.preventDefault()
     zoomReset()
+  } else if (mod && e.key === ',') {
+    e.preventDefault()
+    settingsOpen.value = true
   } else if (mod && (e.key === 'f' || e.key === 'F')) {
     e.preventDefault()
     openSearch(editorPane.value?.getSelection() || '')
@@ -262,6 +300,9 @@ function onKeydown(e) {
     e.preventDefault()
     saveNow()
   } else if (mod && (e.key === 'n' || e.key === 'N')) {
+    e.preventDefault()
+    newDocument()
+  } else if (mod && (e.key === 't' || e.key === 'T')) {
     e.preventDefault()
     newDocument()
   } else if (mod && (e.key === 'w' || e.key === 'W')) {
@@ -293,6 +334,9 @@ onMounted(() => {
     systemDark.value = mq.matches
     mq.addEventListener('change', (ev) => (systemDark.value = ev.matches))
   }
+  // 主进程菜单撤销/重做 → 转发到编辑器自实现栈
+  window.electronAPI?.onMenuUndo?.(() => execUndo())
+  window.electronAPI?.onMenuRedo?.(() => execRedo())
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
@@ -300,12 +344,10 @@ onBeforeUnmount(() => {
 
 // ---------- 快捷键面板数据 ----------
 function execUndo() {
-  editorPane.value?.getScrollEl()?.focus()
-  document.execCommand('undo')
+  editorPane.value?.undo?.()
 }
 function execRedo() {
-  editorPane.value?.getScrollEl()?.focus()
-  document.execCommand('redo')
+  editorPane.value?.redo?.()
 }
 
 const shortcutGroups = [
@@ -330,6 +372,7 @@ const shortcutGroups = [
     title: '页签',
     items: [
       { icon: '＋', name: '新建文档', keys: '⌘N', run: newDocument },
+      { icon: '🗒', name: '新建标签页', keys: '⌘T', run: newDocument },
       { icon: '✕', name: '关闭页签', keys: '⌘W', run: closeActiveTab },
       { icon: '→', name: '下一个页签', keys: '⌃Tab', run: nextTab },
       { icon: '←', name: '上一个页签', keys: '⇧⌃Tab', run: prevTab },
@@ -350,6 +393,43 @@ const shortcutGroups = [
 // ---------- 拖拽回调 ----------
 function onDragStart() {}
 function onDragEnd() {}
+
+// ---------- 打开文件（工具栏「打开」按钮） ----------
+async function openFiles() {
+  const api = window.electronAPI
+  if (!api?.openFilesDialog || !api?.readFile) return
+  const paths = await api.openFilesDialog()
+  for (const p of paths) {
+    try {
+      const content = await api.readFile(p)
+      openFile(p, content)
+    } catch (e) {
+      /* ignore */
+    }
+  }
+}
+
+// ---------- 左侧栏（大纲）拖拽调宽 ----------
+function startSidebarDrag(e) {
+  if (e.button !== 0) return
+  e.preventDefault()
+  document.body.classList.add('is-dragging')
+  const startX = e.clientX
+  const startW = sidebarWidth.value
+  const move = (ev) => {
+    const w = startW + (ev.clientX - startX)
+    sidebarWidth.value = Math.max(150, Math.min(480, w))
+  }
+  const up = () => {
+    document.body.classList.remove('is-dragging')
+    window.removeEventListener('pointermove', move)
+    window.removeEventListener('pointerup', up)
+    window.removeEventListener('pointercancel', up)
+  }
+  window.addEventListener('pointermove', move)
+  window.addEventListener('pointerup', up)
+  window.addEventListener('pointercancel', up)
+}
 </script>
 
 <template>
@@ -375,6 +455,14 @@ function onDragEnd() {}
       </div>
 
       <div class="toolbar__format">
+        <button
+          class="toolbar__btn toolbar__btn--tool"
+          title="打开文件"
+          @click="openFiles"
+        >
+          <span class="toolbar__icon">📂</span>
+          <span class="toolbar__label">打开</span>
+        </button>
         <button
           class="toolbar__btn toolbar__btn--tool"
           :class="{ 'is-on': settingsState.showOutline }"
@@ -465,6 +553,20 @@ function onDragEnd() {}
 
       <div class="toolbar__right">
         <span class="toolbar__stats">字数 {{ wordCount }} · 字符 {{ charCount }}</span>
+        <div class="toolbar__view" title="显示模式">
+          <button
+            :class="{ 'is-active': settingsState.viewMode === 'source' }"
+            @click="settingsState.viewMode = 'source'"
+          >
+            源码
+          </button>
+          <button
+            :class="{ 'is-active': settingsState.viewMode === 'doc' }"
+            @click="settingsState.viewMode = 'doc'"
+          >
+            文档
+          </button>
+        </div>
         <label class="toolbar__toggle" title="开关滚动同步">
           <input v-model="syncEnabled" type="checkbox" />
           <span>同步滚动</span>
@@ -498,30 +600,47 @@ function onDragEnd() {}
       :active-id="docsState.activeId"
       position="top"
       @select="setActive"
-      @close="closeDocument"
+      @close="closeTab"
       @new="newDocument"
     />
 
     <!-- 主体 -->
     <div class="app__main">
+      <!-- 左侧栏：大纲 -->
+      <div
+        v-if="settingsState.showOutline"
+        ref="sidebarRef"
+        class="sidebar"
+        :style="{ width: sidebarWidth + 'px' }"
+      >
+        <OutlinePanel
+          :headings="headings"
+          @jump="jumpToHeading"
+          @close="settingsState.showOutline = false"
+        />
+      </div>
+
+      <!-- 左侧栏 vs 编辑区：左右间隔线可拖 -->
+      <div
+        v-if="settingsState.showOutline"
+        class="sidebar__resizer"
+        title="拖动调整宽度"
+        @pointerdown="startSidebarDrag"
+      ></div>
+
       <TabBar
         v-if="showTabs && settingsState.tabPosition === 'left'"
         :documents="docsState.documents"
         :active-id="docsState.activeId"
         position="left"
         @select="setActive"
-        @close="closeDocument"
+        @close="closeTab"
         @new="newDocument"
       />
 
-      <OutlinePanel
-        v-if="settingsState.showOutline"
-        :headings="headings"
-        @jump="jumpToHeading"
-        @close="settingsState.showOutline = false"
-      />
-
+      <!-- 源码模式：左编辑 + 右预览 -->
       <SplitPane
+        v-if="settingsState.viewMode === 'source'"
         v-model:split="split"
         :min-left="20"
         :min-right="20"
@@ -533,6 +652,7 @@ function onDragEnd() {}
           <MarkdownEditor
             ref="editorPane"
             v-model="activeContent"
+            :doc-id="docsState.activeId"
             :matches="matches"
             :current-match-index="safeCurrentIndex"
             :show-line-numbers="settingsState.showLineNumbers"
@@ -548,13 +668,23 @@ function onDragEnd() {}
         </template>
       </SplitPane>
 
+      <!-- 文档模式：仅预览 -->
+      <MarkdownPreview
+        v-else
+        ref="previewPane"
+        class="app__split"
+        :source="activeContent"
+        :search-query="search.query"
+        :current-match-index="safeCurrentIndex"
+      />
+
       <TabBar
         v-if="showTabs && settingsState.tabPosition === 'right'"
         :documents="docsState.documents"
         :active-id="docsState.activeId"
         position="right"
         @select="setActive"
-        @close="closeDocument"
+        @close="closeTab"
         @new="newDocument"
       />
     </div>
@@ -581,7 +711,7 @@ function onDragEnd() {}
 
     <!-- 保存提示 -->
     <transition name="toast">
-      <div v-if="saveToast" class="toast">已保存</div>
+      <div v-if="saveToast" class="toast">{{ saveToast }}</div>
     </transition>
   </div>
 </template>
@@ -603,6 +733,29 @@ function onDragEnd() {}
 .app__split {
   flex: 1;
   min-width: 0;
+}
+
+/* ---------- 左侧栏（大纲） ---------- */
+.sidebar {
+  flex: 0 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+.sidebar__resizer {
+  flex: 0 0 5px;
+  width: 5px;
+  cursor: col-resize;
+  background: var(--border-color);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: background-color 0.15s ease;
+}
+.sidebar__resizer:hover {
+  background: var(--accent);
 }
 
 /* ---------- 工具栏 ---------- */
@@ -653,7 +806,7 @@ function onDragEnd() {}
   border-radius: 6px;
   background: transparent;
   color: var(--text);
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -667,14 +820,14 @@ function onDragEnd() {}
   padding: calc(3px * var(--zoom)) calc(8px * var(--zoom));
 }
 .toolbar__icon {
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .toolbar__label {
-  font-size: calc(10px * var(--zoom));
+  font-size: calc(12px * var(--zoom));
   line-height: 1.1;
   color: var(--muted);
   white-space: nowrap;
@@ -698,7 +851,7 @@ function onDragEnd() {}
 }
 
 .toolbar__stats {
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--muted);
   white-space: nowrap;
 }
@@ -707,13 +860,37 @@ function onDragEnd() {}
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
 }
 .toolbar__toggle input {
   cursor: pointer;
+}
+
+/* 显示模式切换（源码 / 文档） */
+.toolbar__view {
+  display: flex;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.toolbar__view button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: calc(var(--ui-font-size) * var(--zoom));
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toolbar__view button + button {
+  border-left: 1px solid var(--border-color);
+}
+.toolbar__view button.is-active {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .toolbar__clear {
@@ -741,7 +918,7 @@ function onDragEnd() {}
   background: var(--text);
   color: var(--bg);
   border-radius: 6px;
-  font-size: calc(13px * var(--zoom));
+  font-size: calc(var(--ui-font-size) * var(--zoom));
   box-shadow: var(--shadow);
   z-index: 200;
 }
